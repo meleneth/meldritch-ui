@@ -1,6 +1,6 @@
 {
   "repository": "meldritch-contracts",
-  "revision": "a3d9323d30eb2847b5487d8c97e34531e1ccba03",
+  "revision": "88b5416",
   "lua_host_api": "1.0.0",
   "web_protocol": "1.0.0",
   "artifacts": {
