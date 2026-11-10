@@ -1,3 +1,16 @@
+import type {
+  AccessLink as ContractAccessLink,
+  AdsrParameter as ContractAdsrParameter,
+  AudioTelemetry as ContractAudioTelemetry,
+  Authenticate,
+  ClientMessage,
+  Hello,
+  NoteEvent as ContractNoteEvent,
+  ProjectedState,
+  StateSnapshot,
+  StateUpdated,
+} from "../generated/protocol";
+
 export type Scale = "linear" | "log";
 export interface BaseControl {
   id: string;
@@ -53,14 +66,7 @@ export interface DrumGridControl extends BaseControl {
   state_rows: DrumRowState[];
   position: number | null;
 }
-export interface NoteEvent {
-  id: number;
-  step: number;
-  pitch: number;
-  velocity: number;
-  duration: number;
-  legato: boolean;
-}
+export type NoteEvent = ContractNoteEvent;
 export interface PianoRollControl extends BaseControl {
   kind: "piano_roll";
   step_count: number;
@@ -71,14 +77,7 @@ export interface PianoRollControl extends BaseControl {
   notes: NoteEvent[];
   position: number | null;
 }
-export interface AdsrParameter {
-  name: "attack" | "decay" | "sustain" | "release";
-  control: string;
-  min: number;
-  max: number;
-  scale: Scale;
-  unit: string;
-}
+export type AdsrParameter = ContractAdsrParameter;
 export interface AdsrControl extends BaseControl {
   kind: "adsr";
   parameters: AdsrParameter[];
@@ -122,92 +121,21 @@ export interface Plane {
   read_only?: boolean;
   controls: ControlDefinition[];
 }
-export interface AudioTelemetry {
-  buffer_underruns: number;
-  stream_errors: number;
-  timed_note_errors: number;
-  first_stream_error: string | null;
-  sample_rate: number;
-  channels: number;
-  buffer_frames: number;
-  dsp_workers: number;
+export type AudioTelemetry = ContractAudioTelemetry;
+export type AccessLink = ContractAccessLink;
+interface UiProjectedState {
+  name: ProjectedState["name"];
+  role?: ProjectedState["role"];
+  planes?: Plane[];
+  values: ProjectedState["values"];
+  controls?: ProjectedState["controls"];
+  audio?: ProjectedState["audio"];
+  [key: string]: unknown;
 }
-export interface AccessLink {
-  credential: string;
-  role: string;
-}
-export interface Snapshot {
-  type: "state.snapshot" | "state.updated";
-  epoch?: string;
-  revision: number;
-  schema_revision?: number;
-  state: {
-    name: string;
-    role?: string | null;
-    planes?: Plane[];
-    values?: Record<string, unknown>;
-    controls?: Record<string, unknown>;
-    audio?: AudioTelemetry | null;
-  };
-}
-export type Command =
-  | { type: "control.set"; name: string; value: number | boolean | string }
-  | { type: "step.toggle"; plane: string; control: string; step: number }
-  | { type: "trigger.fire"; plane: string; control: string }
-  | {
-      type: "drum.hit.toggle";
-      plane: string;
-      control: string;
-      pattern: number;
-      row: string;
-      step: number;
-    }
-  | {
-      type: "drum.hit.velocity";
-      plane: string;
-      control: string;
-      pattern: number;
-      row: string;
-      step: number;
-      velocity: number;
-    }
-  | {
-      type: "drum.mute";
-      plane: string;
-      control: string;
-      row: string;
-      muted: boolean;
-    }
-  | ({
-      type: "note.create" | "note.update";
-      plane: string;
-      control: string;
-      pattern: number;
-    } & Omit<NoteEvent, "id" | "legato"> & { id?: number; legato?: boolean })
-  | {
-      type: "note.delete";
-      plane: string;
-      control: string;
-      pattern: number;
-      id: number;
-    }
-  | {
-      type: "pattern.select";
-      plane: string;
-      control: string;
-      pattern: number;
-      boundary: "immediate" | "beat" | "bar" | "cycle";
-    }
-  | {
-      type: "adsr.set";
-      plane: string;
-      control: string;
-      parameter: AdsrParameter["name"];
-      value: number;
-    }
-  | {
-      type: "preset.select";
-      plane: string;
-      control: string;
-      preset: number | string;
-    };
+export type Snapshot = (
+  | Omit<StateSnapshot, "state">
+  | Omit<StateUpdated, "state">
+) & {
+  state: UiProjectedState;
+};
+export type Command = Exclude<ClientMessage, Hello | Authenticate>;

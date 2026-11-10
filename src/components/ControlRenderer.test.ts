@@ -39,6 +39,7 @@ describe("control registry", () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({
+        ok: true,
         json: async () => ({
           websocket: null,
           access_links: [{ role: "musician", credential: "serum-playground" }],
@@ -61,7 +62,10 @@ describe("control registry", () => {
   it("mounts only the selected instrument or master tab", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => ({ json: async () => ({ websocket: null }) })),
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ websocket: null }),
+      })),
     );
     const view = render(App, {});
     const store = usePerformanceStore(view.pinia);
@@ -69,6 +73,7 @@ describe("control registry", () => {
       type: "state.snapshot",
       epoch: "tabs",
       revision: 0,
+      schema_version: 3,
       schema_revision: 1,
       state: {
         name: "Tabbed Playground",

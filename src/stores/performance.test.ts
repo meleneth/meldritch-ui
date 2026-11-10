@@ -10,6 +10,7 @@ const snapshot = (
   type,
   epoch: "run-one",
   revision,
+  schema_version: 3,
   schema_revision: 1,
   state: {
     name: "Test",
@@ -54,7 +55,10 @@ describe("performance store", () => {
     sessionStorage.clear();
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => ({ json: async () => ({ websocket: null }) })),
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ websocket: null }),
+      })),
     );
   });
 

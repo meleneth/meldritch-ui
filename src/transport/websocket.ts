@@ -1,4 +1,24 @@
 import type { AccessLink, Command, Snapshot } from "../types/protocol";
+import { WEB_PROTOCOL_RANGE } from "../generated/protocol";
+
+interface BrowserConfig {
+  websocket: string | null;
+  access_links?: AccessLink[];
+}
+
+function engineHttpBase(): string {
+  return (import.meta.env.VITE_MELDRITCH_ENGINE_URL || "").replace(/\/$/, "");
+}
+
+function websocketUrl(path: string): string {
+  const base = new URL(engineHttpBase() || window.location.origin);
+  base.protocol = base.protocol === "https:" ? "wss:" : "ws:";
+  base.pathname = path;
+  base.search = "";
+  base.hash = "";
+  return base.toString();
+}
+
 export class PerformanceSocket {
   private socket?: WebSocket;
   private retry?: number;
@@ -12,24 +32,43 @@ export class PerformanceSocket {
   ) {}
   async connect(token: string) {
     this.stopped = false;
-    const config = await fetch("/api/browser-config").then((r) => r.json());
+    const config: BrowserConfig = await fetch(
+      `${engineHttpBase()}/api/browser-config`,
+    ).then((response) => {
+      if (!response.ok)
+        throw new Error(`engine configuration: ${response.status}`);
+      return response.json();
+    });
     this.onAccessLinks(config.access_links || []);
     if (!config.websocket) {
       this.onError("WebSocket disabled");
       return;
     }
-    const protocol = location.protocol === "https:" ? "wss" : "ws";
-    this.socket = new WebSocket(
-      `${protocol}://${location.host}${config.websocket}`,
-    );
+    this.socket = new WebSocket(websocketUrl(config.websocket));
     this.socket.onopen = () => {
-      this.onStatus("connected");
-      if (token)
-        this.socket?.send(JSON.stringify({ type: "authenticate", token }));
+      this.onStatus("negotiating");
+      this.socket?.send(
+        JSON.stringify({
+          type: "hello",
+          protocol: WEB_PROTOCOL_RANGE,
+          client: "meldritch-ui",
+        }),
+      );
     };
     this.socket.onmessage = (e) => {
       const value = JSON.parse(e.data);
-      if (value.type === "state.snapshot" || value.type === "state.updated")
+      if (value.type === "hello.accepted") {
+        this.onStatus("connected");
+        if (token)
+          this.socket?.send(JSON.stringify({ type: "authenticate", token }));
+      } else if (value.type === "protocol.incompatible") {
+        this.stopped = true;
+        this.onError(value.error);
+        this.socket?.close();
+      } else if (
+        value.type === "state.snapshot" ||
+        value.type === "state.updated"
+      )
         this.onSnapshot(value);
       else if (value.type === "session") this.onSession(value.role);
       else if (value.type === "error") this.onError(value.error);
