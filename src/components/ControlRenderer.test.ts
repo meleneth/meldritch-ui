@@ -437,6 +437,40 @@ describe("control registry", () => {
     view.unmount();
   });
 
+  it("contains preset content and marks its renderer as a wide flow item", () => {
+    const view = render(ControlRenderer, {
+      control: {
+        id: "catalog",
+        label: "Catalog",
+        kind: "preset_selector",
+        presets: ["Clean"],
+        entries: [
+          {
+            id: "clean",
+            name: "Clean",
+            bank: "Factory",
+            category: "Lead",
+          },
+        ],
+        active: 0,
+        active_name: "Clean",
+        pending: null,
+        failed: "Preset unavailable",
+      },
+    });
+    const renderer = view.root.querySelector(".control-renderer")!;
+    const fieldset = renderer.querySelector(".preset-browser")!;
+    const content = fieldset.querySelector(
+      ":scope > .preset-browser__content",
+    )!;
+    expect(renderer.getAttribute("data-control-layout")).toBe("wide");
+    expect(content.querySelector(".list")).not.toBeNull();
+    expect(content.querySelector("[role=alert]")?.textContent).toContain(
+      "Preset unavailable",
+    );
+    view.unmount();
+  });
+
   it("renders drum lanes and emits hit, velocity, and mute edits", async () => {
     const toggles: unknown[] = [],
       velocities: unknown[] = [],

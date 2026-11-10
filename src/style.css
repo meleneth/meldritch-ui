@@ -195,17 +195,23 @@ main {
   background: #1d2028;
   border-radius: 0.8rem;
   padding: 1rem;
+  min-width: 0;
   min-height: 11rem;
   display: grid;
   place-items: center;
 }
-.plane article:has(.piano-roll),
-.plane article:has(.adsr),
-.plane article:has(.patterns) {
+.plane article:has(> .control-renderer[data-control-layout="wide"]) {
   grid-column: 1/-1;
 }
-.plane article:has(.drum-grid) {
-  grid-column: 1/-1;
+.control-renderer {
+  box-sizing: border-box;
+  display: flow-root;
+  width: 100%;
+  min-width: 0;
+}
+.control-renderer[data-control-layout="compact"] {
+  display: grid;
+  place-items: center;
 }
 .plane article.control-surface-playground {
   grid-column: 1/-1;

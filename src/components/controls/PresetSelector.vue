@@ -87,68 +87,78 @@ const next = () =>
 <template>
   <fieldset class="preset-browser" :disabled="control.read_only" @keydown="key">
     <legend>{{ control.label }}</legend>
-    <div class="current">
-      <button type="button" aria-label="Previous preset" @click="previous">
-        ←</button
-      ><strong>{{ control.active_name || "No preset loaded" }}</strong
-      ><button type="button" aria-label="Next preset" @click="next">→</button
-      ><span v-if="control.pending !== null" class="pending">loading…</span>
-    </div>
-    <div class="filters">
-      <input
-        v-model="search"
-        type="search"
-        placeholder="Search presets"
-        aria-label="Search presets"
-      /><select v-model="bank" aria-label="Preset bank">
-        <option v-for="value in banks" :key="value">{{ value }}</option></select
-      ><select v-model="category" aria-label="Preset category">
-        <option v-for="value in categories" :key="value">{{ value }}</option>
-      </select>
-    </div>
-    <div
-      class="list"
-      role="listbox"
-      tabindex="0"
-      :aria-activedescendant="filtered[cursor]?.id"
-      @scroll="scroll"
-    >
-      <div :style="{ height: `${start * 42}px` }" />
-      <button
-        v-for="(preset, offset) in visible"
-        :id="preset.id"
-        :key="preset.id"
-        type="button"
-        role="option"
-        :aria-selected="preset.id === activeId"
-        :class="{
-          active: preset.id === activeId,
-          cursor: start + offset === cursor,
-        }"
-        @focus="cursor = start + offset"
-        @click="$emit('select', preset.id)"
-      >
-        <span>{{ preset.name }}</span
-        ><small>{{ preset.bank }} · {{ preset.category }}</small>
-      </button>
+    <div class="preset-browser__content">
+      <div class="current">
+        <button type="button" aria-label="Previous preset" @click="previous">
+          ←</button
+        ><strong>{{ control.active_name || "No preset loaded" }}</strong
+        ><button type="button" aria-label="Next preset" @click="next">→</button
+        ><span v-if="control.pending !== null" class="pending">loading…</span>
+      </div>
+      <div class="filters">
+        <input
+          v-model="search"
+          type="search"
+          placeholder="Search presets"
+          aria-label="Search presets"
+        /><select v-model="bank" aria-label="Preset bank">
+          <option v-for="value in banks" :key="value">
+            {{ value }}
+          </option></select
+        ><select v-model="category" aria-label="Preset category">
+          <option v-for="value in categories" :key="value">{{ value }}</option>
+        </select>
+      </div>
       <div
-        :style="{
-          height: `${Math.max(0, filtered.length - start - visible.length) * 42}px`,
-        }"
-      />
+        class="list"
+        role="listbox"
+        tabindex="0"
+        :aria-activedescendant="filtered[cursor]?.id"
+        @scroll="scroll"
+      >
+        <div :style="{ height: `${start * 42}px` }" />
+        <button
+          v-for="(preset, offset) in visible"
+          :id="preset.id"
+          :key="preset.id"
+          type="button"
+          role="option"
+          :aria-selected="preset.id === activeId"
+          :class="{
+            active: preset.id === activeId,
+            cursor: start + offset === cursor,
+          }"
+          @focus="cursor = start + offset"
+          @click="$emit('select', preset.id)"
+        >
+          <span>{{ preset.name }}</span
+          ><small>{{ preset.bank }} · {{ preset.category }}</small>
+        </button>
+        <div
+          :style="{
+            height: `${Math.max(0, filtered.length - start - visible.length) * 42}px`,
+          }"
+        />
+      </div>
+      <small>{{ filtered.length }} of {{ entries.length }} presets</small>
+      <small v-if="control.failed" role="alert">{{ control.failed }}</small>
     </div>
-    <small>{{ filtered.length }} of {{ entries.length }} presets</small>
-    <small v-if="control.failed" role="alert">{{ control.failed }}</small>
   </fieldset>
 </template>
 
 <style scoped>
 .preset-browser {
-  display: grid;
-  gap: 0.55rem;
-  min-width: 18rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
   border: 0;
   padding: 0;
+}
+.preset-browser__content {
+  display: grid;
+  gap: 0.55rem;
+  min-width: 0;
 }
 legend {
   font-weight: 700;
@@ -180,7 +190,9 @@ input {
 }
 .list {
   height: 13rem;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   border: 1px solid #405068;
   border-radius: 0.45rem;
   background: #101722;
